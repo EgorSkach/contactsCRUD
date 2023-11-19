@@ -1,0 +1,174 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+<p>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#Add"> Add </button>
+</p>
+
+
+<div class="modal fade" id="Add" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" asp-page-handler="create">
+                    <div class="form-group">
+                        <label asp-for="Contact.Name" class="control-label"></label>
+                        <input asp-for="Contact.Name" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Contact.MobilePhone" class="control-label"></label>
+                        <input asp-for="Contact.MobilePhone" class="form-control" phone-pattern />
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Contact.JobTitle" class="control-label"></label>
+                        <input asp-for="Contact.JobTitle" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Contact.BirthDate" class="control-label"></label>
+                        <input asp-for="Contact.BirthDate" type="date" class="form-control" />
+                    </div>
+                    <div class="form-group modal-footer">
+                        <input type="submit" value="Create" class="btn btn-primary" />
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col">MobilePhone</th>
+            <th scope="col">JobTitle</th>
+            <th scope="col">BirthDate</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach(var item in Model.Contacts)
+        {
+            <tr>
+                <th>@item.Name</th>
+                <td>@item.MobilePhone</td>
+                <td>@item.JobTitle</td>
+                <td>@item.BirthDate</td>
+                <td>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#Update" data-bs-id="@item.Id">Edit</button>
+                    <form method="post" asp-page-handler="delete" asp-route-id="@item.Id">
+                        <input type="hidden" asp-for="@item.Id" />
+                        <input type="submit" value="Delete" class="btn btn-danger" />
+                    </form>
+                </td>
+            </tr>
+        }        
+    </tbody>
+</table>
+
+
+<div class="modal fade" id="Update" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Udate</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" asp-page-handler="update">
+                    <input type="hidden" asp-for="Contact.Id" id="contactid"/>
+                    <div class="form-group">
+                        <label asp-for="Contact.Name" class="control-label"></label>
+                        <input asp-for="Contact.Name" class="form-control" id="name" />
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Contact.MobilePhone" class="control-label"></label>
+                        <input asp-for="Contact.MobilePhone" class="form-control" id="mobilePhone" phone-pattern />
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Contact.JobTitle" class="control-label"></label>
+                        <input asp-for="Contact.JobTitle" class="form-control" id="jobTitle"/>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Contact.BirthDate" class="control-label"></label>
+                        <input asp-for="Contact.BirthDate" type="date" class="form-control" id="birthDate" />
+                    </div>
+                    <div class="form-group">
+                        <input type="submit" value="Save" class="btn btn-primary" />
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script type="text/javascript">
+    var updateModal = document.getElementById('Update')
+
+    updateModal.addEventListener('show.bs.modal', function (event) {
+
+        var button = event.relatedTarget
+
+        var id = button.getAttribute('data-bs-id')
+
+        var modalId = updateModal.querySelector('.modal-body input[id=contactid]')
+        var modalName = updateModal.querySelector('.modal-body input[id=name]')
+        var modalMobilePhone = updateModal.querySelector('.modal-body input[id=mobilePhone]')
+        var modalJobTitle = updateModal.querySelector('.modal-body input[id=jobTitle]')
+        var modalBirthDate = updateModal.querySelector('.modal-body input[id=birthDate]')
+
+        var xhr = new XMLHttpRequest()
+        xhr.onload = function () {
+            if (this.status === 200) {
+                console.log(xhr.responseText)
+                var data = JSON.parse(xhr.responseText)
+
+                modalId.value = data.id
+                modalName.value = data.name
+                modalMobilePhone.value = data.mobilePhone
+                modalJobTitle.value = data.jobTitle
+                modalBirthDate.value = data.birthDate
+            }
+        };
+
+        xhr.open('get', '/Index?handler=FindContact&id=' + id, true)
+        xhr.send()
+        
+    })
+
+    document.addEventListener("DOMContentLoaded", function () {
+        var eventCalllback = function (e) {
+            var el = e.target,
+                clearVal = el.dataset.phoneClear,
+                pattern = el.dataset.phonePattern,
+                matrix_def = "+375 (__) ___-__-__",
+                matrix = pattern ? pattern : matrix_def,
+                i = 0,
+                def = matrix.replace(/\D/g, ""),
+                val = e.target.value.replace(/\D/g, "");
+            if (clearVal !== 'false' && e.type === 'blur') {
+                if (val.length < matrix.match(/([\_\d])/g).length) {
+                    e.target.value = '';
+                    return;
+                }
+            }
+            if (def.length >= val.length) val = def;
+            e.target.value = matrix.replace(/./g, function (a) {
+                return /[_\d]/.test(a) && i < val.length ? val.charAt(i++) : i >= val.length ? "" : a
+            });
+        }
+        var phone_inputs = document.querySelectorAll('[phone-pattern]');
+        for (let elem of phone_inputs) {
+            for (let ev of ['input', 'blur', 'focus']) {
+                elem.addEventListener(ev, eventCalllback);
+            }
+        }
+    });
+</script>
+
